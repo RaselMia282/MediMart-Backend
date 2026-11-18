@@ -1,0 +1,38 @@
+import dotenv from "dotenv";
+import path from "path";
+
+dotenv.config({
+  path: path.join(process.cwd(), ".env"),
+});
+
+export default {
+  port: process.env.PORT || 8000,
+  database_url: process.env.DATABASE_URL,
+  app_url: process.env.APP_URL,
+  bcrypt_salt_rounds: process.env.BCRYPT_SALT_ROUNDS,
+  jwt_access_secret: process.env.JWT_ACCESS_SECRET,
+  jwt_refresh_secret: process.env.JWT_REFRESH_SECRET,
+  jwt_access_expire_in: process.env.JWT_ACCESS_EXPIRES_IN,
+  jwt_refresh_expire_in: process.env.JWT_REFRESH_EXPIRES_IN,
+  stripe_secret_key: process.env.STRIPE_SECRET_KEY,
+  stripe_publishable_key: process.env.STRIPE_PUBLISHABLE_KEY,
+  payment_success_url: process.env.PAYMENT_SUCCESS_URL,
+  payment_cancel_url: process.env.PAYMENT_CANCEL_URL,
+  stripe_webhook_secret: process.env.STRIPE_WEBHOOK_SECRET,
+  cloudinary_cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  cloudinary_api_key: process.env.CLOUDINARY_API_KEY,
+  cloudinary_secret_key: process.env.CLOUDINARY_SECRET_KEY,
+  google_client_id: process.env.GOOGLE_CLIENT_ID,
+  google_client_secret: process.env.GOOGLE_CLIENT_SECRET,
+  redis_user: process.env.REDIS_USER,
+  redis_host:process.env.REDIS_HOST,
+  redis_password: process.env.REDIS_PASSWORD,
+  redis_port:process.env.REDIS_PORT,
+  smtp_user:process.env.SMTP_USER,
+  smtp_password:process.env.SMTP_PASSWORD,
+  email_sender:process.env.EMAIL_SENDER,
+  open_router_api_key:process.env.OPENROUTER_API_KEY!,
+  open_router_chat_model:process.env.OPENROUTER_CHAT_MODEL!,
+  open_router_fallback_chat_model:process.env.OPENROUTER_FALLBACK_CHAT_MODEL!,
+  open_router_embedding_model:process.env.OPENROUTER_EMBEDDING_MODEL!,
+};
