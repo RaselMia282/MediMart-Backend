@@ -15,7 +15,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.get("/", (req: Request, res: Response) => {
-  res.send("Practice Authentication with Redis");
+  res.send("Your Health is Our First Priority");
 });
 
 export default app;
