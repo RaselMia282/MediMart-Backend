@@ -1,10 +1,15 @@
-import { randomInt, createHmac } from "crypto";
+import { randomInt, createHmac, timingSafeEqual } from "crypto";
 import config from "../../config";
 import { prisma } from "../../lib/prisma";
-import { IPendingRegistration, IRegisterUser } from "./auth.interface";
+import {
+  IPendingRegistration,
+  IRegisterUser,
+  IVerifyEmail,
+} from "./auth.interface";
 import bcrypt from "bcryptjs";
 import { redisClient } from "../../lib/redis";
 import { sendVerificationEmail } from "../../utils/sendVerificationEmail";
+
 const pendingRegisterUserIntoDB = async (payload: IRegisterUser) => {
   const { name, email, password, phone } = payload;
 
@@ -56,6 +61,59 @@ const pendingRegisterUserIntoDB = async (payload: IRegisterUser) => {
   };
 };
 
+const verifyEmailAndCreateUserIntoDB = async (payload: IVerifyEmail) => {
+  const { email, otp } = payload;
+  const normalizeEmail = email.trim().toLowerCase();
+  const redisKey = `medimart:pending-registration:${normalizeEmail}`;
+
+  const pendingData = await redisClient.get(redisKey);
+  if (!pendingData) {
+    throw new Error("Registration expired or not found");
+  }
+
+  const pendingRegistration: IPendingRegistration = JSON.parse(
+    pendingData as string,
+  );
+  const incomingOtpHash = createHmac("sha256", config.otp_secret)
+    .update(otp)
+    .digest("hex");
+
+  const isOtpValid =
+    incomingOtpHash.length === pendingRegistration.otpHash.length &&
+    timingSafeEqual(
+      Buffer.from(incomingOtpHash, "hex"),
+      Buffer.from(pendingRegistration.otpHash, "hex"),
+    );
+
+  if (!isOtpValid) {
+    throw new Error("Invalid OTP");
+  }
+
+  const role = await prisma.role.findUnique({
+    where: { name: pendingRegistration.roleName || "CUSTOMER" },
+  });
+  if (!role) {
+    throw new Error("Role not found");
+  }
+
+  const result = await prisma.user.create({
+    data: {
+      name: pendingRegistration.name,
+      email: pendingRegistration.email,
+      passwordHash: pendingRegistration.passwordHash,
+      phone: pendingRegistration.phone,
+      emailVerifiedAt: new Date(),
+      role: {
+        connect: {
+          id: role.id,
+        },
+      },
+    },
+  });
+  return result;
+};
+
 export const authService = {
   pendingRegisterUserIntoDB,
+  verifyEmailAndCreateUserIntoDB,
 };
