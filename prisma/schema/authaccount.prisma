@@ -1,0 +1,24 @@
+model AuthAccount {
+    id                String       @id @default(uuid())
+    userId            String
+    provider          AuthProvider @default(CREDENTIAL)
+    providerAccountId String
+    accessToken       String?
+    refreshToken      String?
+    expiresAt         DateTime?
+    tokenType         String?
+    scope             String?
+    idToken           String?
+    password          String?
+
+    metadata Json?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    user User @relation(fields: [userId], references: [id])
+
+    @@unique([provider, providerAccountId])
+    @@index([userId])
+    @@map("auth_accounts")
+}

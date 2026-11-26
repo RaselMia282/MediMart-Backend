@@ -1,18 +1,23 @@
 model User {
-    id                      String    @id @default(uuid())
-    name                    String
-    email                   String    @unique
-    password                String
-    number                  String?
-    isVerified              Boolean   @default(false)
-    verificationToken       String?
-    verificationTokenExpiry DateTime?
+    id           String  @id @default(uuid())
+    name         String
+    email        String? @unique
+    phone        String? @unique
+    passwordHash String?
 
-    role   Role    @default(USER)
-    status Status? @default(ACTIVE)
+    roleId String
+    role   Role   @relation(fields: [roleId], references: [id])
 
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    status       Status        @default(ACTIVE)
+    authAccounts AuthAccount[]
+    profileImage String?
+    
+    emailVerifiedAt DateTime?
+    phoneVerifiedAt DateTime?
+    lastLoginAt     DateTime?
+    createdAt       DateTime  @default(now())
+    updatedAt       DateTime  @updatedAt
+    deletedAt       DateTime?
 
     @@map("users")
 }

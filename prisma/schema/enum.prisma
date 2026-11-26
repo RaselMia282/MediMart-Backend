@@ -1,4 +1,4 @@
-enum Role {
+enum Roles {
   USER
   ADMIN
 }
@@ -7,4 +7,19 @@ enum Status {
     BLOCKED
     DELETED
     ACTIVE
+}
+
+enum AuthProvider {
+  GOOGLE
+  CREDENTIAL
+}
+
+
+enum PaymentMethod {
+  CREDIT_CARD
+  SSLCOMMERZ
+  BKASH
+
+  CASH_ON_DELIVERY
+  STRIPE
 }
