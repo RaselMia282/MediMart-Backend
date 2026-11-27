@@ -79,8 +79,23 @@ const loginUser = catchAsync(
   },
 );
 
+const logout = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    res.clearCookie("accessToken", cookieOptions);
+    res.clearCookie("refreshToken", cookieOptions);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Logout successful",
+      data: null,
+    });
+  },
+);
+
 export const authController = {
   pendingRegisterUser,
   verifyEmailAndCreateUser,
   loginUser,
+  logout,
 };
