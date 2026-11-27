@@ -1,16 +1,16 @@
 export interface IRegisterUser {
   name: string;
   email: string;
-  password: string; 
+  password: string;
   phone?: string;
 }
 
 export interface IPendingRegistration {
   name: string;
   email: string;
-  passwordHash: string; 
+  passwordHash: string;
   phone?: string;
-  roleName?: string; 
+  roleName?: string;
   otpHash: string;
   attempts?: number;
 }
@@ -19,7 +19,6 @@ export interface IVerifyEmail {
   email: string;
   otp: string;
 }
-
 
 export interface Ilogin {
   email: string;

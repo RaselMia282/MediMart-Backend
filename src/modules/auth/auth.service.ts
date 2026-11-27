@@ -2,6 +2,7 @@ import { randomInt, createHmac, timingSafeEqual } from "crypto";
 import config from "../../config";
 import { prisma } from "../../lib/prisma";
 import {
+  Ilogin,
   IPendingRegistration,
   IRegisterUser,
   IVerifyEmail,
@@ -9,6 +10,7 @@ import {
 import bcrypt from "bcryptjs";
 import { redisClient } from "../../lib/redis";
 import { sendVerificationEmail } from "../../utils/sendVerificationEmail";
+import { jwtUtilis } from "../../utils/jwt";
 
 const pendingRegisterUserIntoDB = async (payload: IRegisterUser) => {
   const { name, email, password, phone } = payload;
@@ -42,7 +44,7 @@ const pendingRegisterUserIntoDB = async (payload: IRegisterUser) => {
     phone,
     passwordHash: hashPassword,
     otpHash,
-    attempts: 0,
+    attempts: 4,
   };
 
   const redisKey = `medimart:pending-registration:${normalizeEmail}`;
@@ -103,17 +105,81 @@ const verifyEmailAndCreateUserIntoDB = async (payload: IVerifyEmail) => {
       passwordHash: pendingRegistration.passwordHash,
       phone: pendingRegistration.phone,
       emailVerifiedAt: new Date(),
+
       role: {
         connect: {
           id: role.id,
         },
       },
     },
+    omit: {
+      passwordHash: true,
+    },
   });
   return result;
+};
+
+const loginUserIntoDB = async (payload: Ilogin) => {
+  const { email, password } = payload;
+  const normalizeEmail = email.trim().toLowerCase();
+  const isUserExists = await prisma.user.findUnique({
+    where: { email: normalizeEmail },
+    include: {
+      role: true,
+    },
+  });
+  if (!isUserExists) {
+    throw new Error("Invalid email or password");
+  }
+
+  if (isUserExists.status === "DELETED") {
+    throw new Error("User is deleted");
+  }
+  if (isUserExists.status === "BLOCKED") {
+    throw new Error("User is blocked.Please contact support team");
+  }
+  if (!isUserExists.emailVerifiedAt) {
+    throw new Error("Please verify your email");
+  }
+  const isPasswordMatch = await bcrypt.compare(
+    password,
+    isUserExists.passwordHash,
+  );
+  if (!isPasswordMatch) {
+    throw new Error("Invalid email or password");
+  }
+  // create jwt
+  const jwtPayload = {
+    id: isUserExists.id,
+    email: isUserExists.email,
+    role: isUserExists.role.name,
+  };
+  // create accesstoken
+  const accessToken = jwtUtilis.createToken(
+    jwtPayload,
+    config.jwt_access_secret as string,
+    config.jwt_access_expire_in as string,
+  );
+  // create refreshtoken
+  const refreshToken = jwtUtilis.createToken(
+    jwtPayload,
+    config.jwt_refresh_secret as string,
+    config.jwt_refresh_expire_in as string,
+  );
+  return {
+    accessToken,
+    refreshToken,
+    user: {
+      id: isUserExists.id,
+      email: isUserExists.email,
+      role: isUserExists.role.name,
+      profileImage: isUserExists.profileImage,
+    },
+  };
 };
 
 export const authService = {
   pendingRegisterUserIntoDB,
   verifyEmailAndCreateUserIntoDB,
+  loginUserIntoDB,
 };
