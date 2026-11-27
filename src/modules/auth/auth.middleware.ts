@@ -1,12 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 
 import { JwtPayload } from "jsonwebtoken";
-import { Role } from "../../generated/prisma/enums";
 
 import config from "../../config";
 import { prisma } from "../../lib/prisma";
 import { catchAsync } from "../../utils/catchAsync";
 import { jwtUtilis } from "../../utils/jwt";
+import { Role, Roles } from "../../generated/prisma/client";
 
 declare global {
   namespace Express {
@@ -14,13 +14,13 @@ declare global {
       user?: {
         email: string;
         id: string;
-        role: Role;
+        role: Roles;
       };
     }
   }
 }
 
-export const auth = (...requiredRoles: Role[]) => {
+export const auth = (...requiredRoles: Roles[]) => {
   return catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     console.log("🔥 AUTH MIDDLEWARE HIT");
 

@@ -94,12 +94,11 @@ const verifyEmailAndCreateUserIntoDB = async (payload: IVerifyEmail) => {
     throw new Error("Invalid OTP");
   }
 
-  const role = await prisma.role.findUnique({
-    where: { name: pendingRegistration.roleName || "CUSTOMER" },
+  const role = await prisma.role.upsert({
+    where: { name: pendingRegistration.roleName || "USER" },
+    update: {},
+    create: { name: pendingRegistration.roleName || "USER" },
   });
-  if (!role) {
-    throw new Error("Role not found");
-  }
 
   const result = await prisma.user.create({
     data: {
@@ -119,6 +118,7 @@ const verifyEmailAndCreateUserIntoDB = async (payload: IVerifyEmail) => {
       passwordHash: true,
     },
   });
+  await redisClient.del(redisKey);
   return result;
 };
 
@@ -196,8 +196,36 @@ const loginUserIntoDB = async (payload: Ilogin) => {
   };
 };
 
+const getMyProfileIntoDB = async (userId: string) => {
+  const result = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      profileImage: true,
+      status: true,
+      emailVerifiedAt: true,
+      lastLoginAt: true,
+      createdAt: true,
+      updatedAt: true,
+      role: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  });
+  if (!result) {
+    throw new Error("User not found");
+  }
+  return result;
+};
+
 export const authService = {
   pendingRegisterUserIntoDB,
   verifyEmailAndCreateUserIntoDB,
   loginUserIntoDB,
+  getMyProfileIntoDB,
 };
