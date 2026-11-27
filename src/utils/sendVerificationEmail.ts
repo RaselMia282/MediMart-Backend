@@ -1,8 +1,9 @@
 import path from "path";
 import ejs from "ejs";
 import { transporter } from "../lib/nodemailer";
-import { from } from "stream/iter";
+
 import config from "../config";
+
 export const sendVerificationEmail = async (
   email: string,
   name: string,
@@ -23,4 +24,22 @@ export const sendVerificationEmail = async (
     html,
    })
 
+};
+
+
+export const sendWelcomeEmail = async (email: string, name: string) => {
+  const templatePath = path.join(
+    process.cwd(),
+    "src/templates/welcome-message.ejs",
+  );
+  const html = await ejs.renderFile(templatePath, {
+    name,
+  });
+
+  await transporter.sendMail({
+    from: config.smtp_user,
+    to: email,
+    subject: "Welcome to MediMart!",
+    html,
+  });
 };

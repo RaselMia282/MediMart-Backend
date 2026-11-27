@@ -9,7 +9,10 @@ import {
 } from "./auth.interface";
 import bcrypt from "bcryptjs";
 import { redisClient } from "../../lib/redis";
-import { sendVerificationEmail } from "../../utils/sendVerificationEmail";
+import {
+  sendVerificationEmail,
+  sendWelcomeEmail,
+} from "../../utils/sendVerificationEmail";
 import { jwtUtilis } from "../../utils/jwt";
 
 const pendingRegisterUserIntoDB = async (payload: IRegisterUser) => {
@@ -147,6 +150,21 @@ const loginUserIntoDB = async (payload: Ilogin) => {
   );
   if (!isPasswordMatch) {
     throw new Error("Invalid email or password");
+  }
+  // first time login user welcome message
+  const isFirstLogin = !isUserExists.lastLoginAt;
+  await prisma.user.update({
+    where: { id: isUserExists.id },
+    data: {
+      lastLoginAt: new Date(),
+    },
+  });
+  if (isFirstLogin) {
+    const userName = isUserExists.name || isUserExists.email.split("@")[0];
+
+    sendWelcomeEmail(isUserExists.email, userName).catch((err: unknown) => {
+      console.error("Failed to send welcome email:", err);
+    });
   }
   // create jwt
   const jwtPayload = {
