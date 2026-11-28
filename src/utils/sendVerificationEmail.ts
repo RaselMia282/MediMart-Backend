@@ -43,3 +43,26 @@ export const sendWelcomeEmail = async (email: string, name: string) => {
     html,
   });
 };
+
+
+export const sendForgotPasswordEmail = async (
+  email: string,
+  name: string,
+  otp: string,
+) => {
+  const templatePath = path.join(
+    process.cwd(),
+    "src/templates/forgot-password.ejs",
+  );
+  const html = await ejs.renderFile(templatePath, {
+    name,
+    otp,
+  });
+
+  await transporter.sendMail({
+    from: config.smtp_user,
+    to: email,
+    subject: "Reset Password OTP - MediMart",
+    html,
+  });
+};

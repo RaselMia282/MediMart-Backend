@@ -10,5 +10,7 @@ router.post("/verify-email", authController.verifyEmailAndCreateUser);
 router.post("/login", authController.loginUser);
 router.post("/logout", authController.logout);
 router.get("/me", auth(Roles.USER, Roles.ADMIN), authController.getMyProfile);
+router.post("/forgot-password", authController.forgotPassword);
+router.post("/reset-password", authController.resetPassword);
 
 export const authRouter = router;

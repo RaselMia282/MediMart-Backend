@@ -2,6 +2,7 @@ import { randomInt, createHmac, timingSafeEqual } from "crypto";
 import config from "../../config";
 import { prisma } from "../../lib/prisma";
 import {
+  IForgotPassword,
   Ilogin,
   IPendingRegistration,
   IRegisterUser,
@@ -10,6 +11,7 @@ import {
 import bcrypt from "bcryptjs";
 import { redisClient } from "../../lib/redis";
 import {
+  sendForgotPasswordEmail,
   sendVerificationEmail,
   sendWelcomeEmail,
 } from "../../utils/sendVerificationEmail";
@@ -223,9 +225,64 @@ const getMyProfileIntoDB = async (userId: string) => {
   return result;
 };
 
+const forgotPasswordIntoDB = async (payload: IForgotPassword) => {
+  const { email } = payload;
+  const normalizeEmail = email.trim().toLowerCase();
+  const isUserExists = await prisma.user.findUnique({
+    where: { email: normalizeEmail },
+    include: {
+      authAccounts: true,
+    },
+  });
+  if (!isUserExists) {
+    throw new Error("User doest not exists");
+  }
+
+  if (isUserExists.status === "BLOCKED") {
+    throw new Error("User is blocked");
+  }
+  if (isUserExists.deletedAt || isUserExists.status === "DELETED") {
+    throw new Error("User is deleted");
+  }
+
+  if (!isUserExists.emailVerifiedAt) {
+    throw new Error("User is not verified");
+  }
+  const isGoogleUser = isUserExists.authAccounts.some((account) => {
+    account.provider === "GOOGLE";
+  });
+  if (isGoogleUser) {
+    throw new Error("User has account with google");
+  }
+
+  const otp = randomInt(100000, 1000000).toString();
+  const redisKey = `medimart:forgot-password:${isUserExists.email}`;
+  await redisClient.set(redisKey, otp, {
+    expiration: {
+      type: "EX",
+      value: 5 * 60,
+    },
+  });
+  try {
+    sendForgotPasswordEmail(isUserExists.email, isUserExists.name, otp);
+  } catch (error) {
+    await redisClient.del(redisKey);
+    console.log("Failed to send code");
+  }
+  return {
+    email: isUserExists.email,
+  };
+};
+
+const resetPasswordIntoDB = async () => {
+  
+};
+
 export const authService = {
   pendingRegisterUserIntoDB,
   verifyEmailAndCreateUserIntoDB,
   loginUserIntoDB,
   getMyProfileIntoDB,
+  forgotPasswordIntoDB,
+  resetPasswordIntoDB,
 };

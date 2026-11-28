@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { catchAsync } from "../../utils/catchAsync";
 import {
+  forgotPasswordSchema,
   loginSchema,
   registerSchema,
   verifyEmailSchema,
@@ -107,10 +108,34 @@ const getMyProfile = catchAsync(
   },
 );
 
+const forgotPassword = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const payload = forgotPasswordSchema.safeParse(req.body);
+    if (!payload.success) {
+      throw new Error(payload.error.message);
+    }
+    const result = await authService.forgotPasswordIntoDB(payload.data);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message:
+        "If an account with that email exists, a password reset OTP has been sent",
+      data: result,
+    });
+  },
+);
+
+const resetPassword = catchAsync(async(req:Request,res:Response,next:NextFunction)=>{
+
+})
+
 export const authController = {
   pendingRegisterUser,
   verifyEmailAndCreateUser,
   loginUser,
   logout,
   getMyProfile,
+  forgotPassword,
+  resetPassword,
 };

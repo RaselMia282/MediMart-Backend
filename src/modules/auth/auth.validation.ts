@@ -59,3 +59,30 @@ export const loginSchema = z.object({
     .regex(/[a-z]/, "Password must contain at least one lowercase letter")
     .regex(/[0-9]/, "Password must contain at least one number"),
 });
+
+export const forgotPasswordSchema = z.object({
+  email: z
+    .string("Email is required")
+    .trim()
+    .toLowerCase()
+    .email("Please provide a valid email address")
+    .max(150, "Email cannot exceed 150 characters"),
+});
+
+
+export const resetPasswordSchema = z.object({
+  email: z
+    .string("Email is required")
+    .trim()
+    .toLowerCase()
+    .email("Please provide a valid email address")
+    .max(150, "Email cannot exceed 150 characters"),
+  otp: z
+    .string("OTP is required")
+    .trim()
+    .regex(/^\d{6}$/, "OTP must be a valid 6-digit number"),
+  newPassword: z
+    .string("New password is required")
+    .min(6, "Password must be at least 6 characters long")
+    .max(100, "Password cannot exceed 100 characters"),
+});
